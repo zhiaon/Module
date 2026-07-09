@@ -1,0 +1,117 @@
+#!name=七猫小说去广告 V2
+#!desc=七猫小说去广告 V2：拦截开屏/章内广告/底部横幅/听书广告/悬浮窗！覆盖 wtzw 全域 + gdt(腾讯广点通) + pangolin(穿山甲) + snssdk(字节) 广告链路。内嵌 Script 双重拦截。
+#!author=Codex
+#!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/SevenCat.png
+
+[Script]
+# ===== 响应体去广告 =====
+http-response ^https?:\/\/api-cfg\.wtzw\.com\/v\d\/(reward|adv|splash|offline-adv|operation)\/ requires-body=true,timeout=10,script-path=qimao_block.js,tag=七猫-广告配置
+http-response ^https?:\/\/api-bc\.wtzw\.com\/api\/v\d\/(book-store\/config|book-store\/push-book|operation|search\/dispose) requires-body=true,timeout=10,script-path=qimao_block.js,tag=七猫-书店广告
+http-response ^https?:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? requires-body=true,timeout=10,script-path=qimao_block.js,tag=七猫-个人中心
+http-response ^https?:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/withdraw\/init requires-body=true,timeout=10,script-path=qimao_block.js,tag=七猫-提现
+http-response ^https?:\/\/api-gw\.wtzw\.com\/welf\/app\/v\d\/task\/red-packet requires-body=true,timeout=10,script-path=qimao_block.js,tag=七猫-红包任务
+http-response ^https?:\/\/cdn\.wtzw\.com\/bookimg\/free\/api\/v\d\/reader\/reader-copy-paragraph-all\.json requires-body=true,timeout=10,script-path=qimao_block.js,tag=七猫-章节复制
+
+# ===== 穿山甲 / 头条广告拦截 =====
+http-response ^https?:\/\/.*\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ requires-body=true,timeout=10,script-path=qimao_block.js,tag=七猫-头条广告
+http-response ^https?:\/\/.*\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/get_ads\/ requires-body=true,timeout=10,script-path=qimao_block.js,tag=七猫-穿山甲
+http-response ^https?:\/\/.*\.snssdk\.com\/api\/ad\/union\/sdk\/get_ads\/ requires-body=true,timeout=10,script-path=qimao_block.js,tag=七猫-snssdk广告
+
+[Script Body (qimao_block.js)]
+var body = $response.body;
+try {
+  var obj = JSON.parse(body);
+  if (obj) {
+    if (obj.data && Array.isArray(obj.data)) obj.data = [];
+    if (obj.ad_list && Array.isArray(obj.ad_list)) obj.ad_list = [];
+    if (obj.ads && Array.isArray(obj.ads)) obj.ads = [];
+    if (obj.ad_count !== undefined) obj.ad_count = 0;
+    if (obj.total !== undefined) obj.total = 0;
+    if (obj.cards) obj.cards = [];
+    if (obj.creatives) obj.creatives = [];
+    if (obj.func_area && Array.isArray(obj.func_area)) obj.func_area = obj.func_area.filter(function(f) { return f && f.name && (f.name.indexOf('广告') < 0 && f.name.indexOf('ad') < 0 && f.type !== 'advertisement'); });
+    if (obj.welfare_center) obj.welfare_center = null;
+    if (obj.task_list) obj.task_list = [];
+    if (obj.red_packet) obj.red_packet = null;
+  }
+  $done({body: JSON.stringify(obj)});
+} catch (e) {
+  $done({});
+}
+
+[Script Body (qimao_request.js)]
+$done({});
+
+[Rule]
+# ===== 七猫自营域名 =====
+DOMAIN,cdn-ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,cdn-new-ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,wtzw.com,REJECT,extended-matching,pre-matching
+
+# ===== 腾讯广点通 =====
+DOMAIN-SUFFIX,gdt.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,ad.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,ads.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,adw.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,adx.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,gdtimg.com,REJECT,extended-matching,pre-matching
+
+# ===== 字节穿山甲 =====
+DOMAIN-SUFFIX,pangolin-sdk-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
+
+# ===== 字节头条广告 =====
+DOMAIN-SUFFIX,snssdk.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,bytegecko.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,toutiaocloud.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,toutiaocloud.net,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,byteimg.com,REJECT,extended-matching,pre-matching
+
+# ===== 字节广告标识 =====
+DOMAIN,p6-ad-sign.byteimg.com,REJECT,extended-matching,pre-matching
+DOMAIN,p9-ad-sign.byteimg.com,REJECT,extended-matching,pre-matching
+
+# ===== 快手广告联盟 =====
+DOMAIN-SUFFIX,kuaishou.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,kwad.net,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,kwaizt.com,REJECT,extended-matching,pre-matching
+
+# ===== 百度广告联盟 =====
+DOMAIN-SUFFIX,bdurl.net,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,mobads.baidu.com,REJECT,extended-matching,pre-matching
+
+# ===== 广告 SDK/竞拍 =====
+DOMAIN,ads5-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads3-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads5-normal.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ads3-normal.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,mssdk.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,ma.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,zlink.ugsdk.cn,REJECT,extended-matching,pre-matching
+
+# ===== 分析/埋点 =====
+DOMAIN,log3-applog.fqnovel.com,REJECT,extended-matching,pre-matching
+DOMAIN,log5-applog.fqnovel.com,REJECT,extended-matching,pre-matching
+
+[URL Rewrite]
+# 七猫广告配置接口
+^https:\/\/api-cfg\.wtzw\.com\/v\d\/(reward|adv|splash|offline-adv|operation)\/ _ reject
+# 七猫书店推送/配置
+^https:\/\/api-bc\.wtzw\.com\/api\/v\d\/(book-store\/config|book-store\/push-book|operation|search\/dispose) _ reject
+# 七猫提现广告
+^https:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/withdraw\/init _ reject
+# 七猫红包任务
+^https:\/\/api-gw\.wtzw\.com\/welf\/app\/v\d\/task\/red-packet _ reject
+# 七猫章节复制广告
+^https:\/\/cdn\.wtzw\.com\/bookimg\/free\/api\/v\d\/reader\/reader-copy-paragraph-all\.json _ reject
+# 字节穿山甲 / 头条广告物料
+^https:\/\/sf3-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ _ reject
+# pangolin 广告 SDK
+^https?:\/\/.+\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/(get_ads|stats|settings|config)\/ _ reject
+# snssdk 广告
+^https?:\/\/.+\.snssdk\.com\/api\/ad\/union\/sdk\/(get_ads|stats|settings|config|reward_video)\/ _ reject
+# 广告素材
+^https?:\/\/p(6|9)-ad-sign\.byteimg\.com\/.* _ reject
+
+[MITM]
+hostname = %APPEND% *.wtzw.com, *.gdt.qq.com, *.pangolin-sdk-toutiao.com, *.pglstatp-toutiao.com, *.snssdk.com, *.bytegecko.com, *.toutiaocloud.com, *.toutiaocloud.net, *.byteimg.com, *.kuaishou.com, *.kwad.net, *.kwaizt.com, *.zijieapi.com, *.bdurl.net, *.ugsdk.cn, *.mobads.baidu.com, *.fqnovel.com
