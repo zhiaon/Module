@@ -1,5 +1,5 @@
 #!name=番茄小说去广告 V2
-#!desc=全面去广告 V2：拦截开屏/文章底部/章末/听书/悬浮/福利标签/福利中心！移除广告 SDK 接口，覆盖 snssdk / fqnovel / zijieapi / bytegecko / toutiaocloud 全域广告链路。含 MITM + Script 双重拦截，嵌入式脚本无需额外下载。
+#!desc=全面去广告 V2：拦截开屏/文章底部/章末/听书/悬浮/福利标签/福利中心！移除以 s 开头的广告域名，保留正常小说内容请求。
 #!author=Codex
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/DragonRead.png
 
@@ -8,9 +8,6 @@
 http-response ^https?:\/\/.*\.snssdk\.com\/api\/ad\/union\/sdk\/get_ads\/ requires-body=true,timeout=10,script-path=ad_block.js,tag=番茄小说-广告SDK
 http-response ^https?:\/\/.*\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/get_ads\/ requires-body=true,timeout=10,script-path=ad_block.js,tag=番茄小说-pangolin
 http-response ^https?:\/\/.*\.snssdk\.com\/api\/ad\/union\/sdk\/(config|settings|interest|task)\/ requires-body=true,timeout=10,script-path=ad_block.js,tag=番茄小说-广告配置
-
-# ===== 请求体阻止 =====
-http-request ^https?:\/\/.*\.snssdk\.com\/api\/ad\/union\/sdk\/(get_ads|stats|settings)\/ script-path=ad_reject.js,timeout=5,tag=番茄小说-广告请求
 
 [Script Body (ad_block.js)]
 var body = $response.body;
@@ -33,18 +30,16 @@ try {
   $done({});
 }
 
-[Script Body (ad_reject.js)]
-$done({body: JSON.stringify({data: [], ad_count: 0})});
-
 [Rule]
-# ===== 广告 SDK 核心链路 =====
-DOMAIN-SUFFIX,snssdk.com,REJECT,extended-matching,pre-matching
+# ===== 穿山甲广告 SDK =====
 DOMAIN-SUFFIX,pangolin-sdk-toutiao.com,REJECT,extended-matching,pre-matching
+
+# ===== toutiaocloud（监控/广告） =====
 DOMAIN-SUFFIX,toutiaocloud.com,REJECT,extended-matching,pre-matching
 DOMAIN-SUFFIX,toutiaocloud.net,REJECT,extended-matching,pre-matching
+
+# ===== bytegecko（AB 实验/埋点） =====
 DOMAIN-SUFFIX,bytegecko.com,REJECT,extended-matching,pre-matching
-DOMAIN-SUFFIX,fqnovelvod.com,REJECT,extended-matching,pre-matching
-DOMAIN-SUFFIX,fqnovel.com,REJECT,extended-matching,pre-matching
 
 # ===== 字节广告标识 =====
 DOMAIN,p6-ad-sign.byteimg.com,REJECT,extended-matching,pre-matching
@@ -57,30 +52,28 @@ DOMAIN,dig.bdurl.net,REJECT,extended-matching,pre-matching
 # ===== 电商广告 =====
 DOMAIN,p3-aio.ecombdimg.com,REJECT,extended-matching,pre-matching
 
-# ===== 广告竞价 / 广告配置 =====
+# ===== zijieapi 广告/AB实验/埋点 =====
 DOMAIN,ads5-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ads3-normal-hl.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ads5-normal.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ads3-normal.zijieapi.com,REJECT,extended-matching,pre-matching
-
-# ===== AB 实验 =====
 DOMAIN,abtest3-misc.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,abtest3-misc-hl.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,gecko3.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,gecko5.zijieapi.com,REJECT,extended-matching,pre-matching
-
-# ===== 埋点统计 =====
 DOMAIN,mssdk.zijieapi.com,REJECT,extended-matching,pre-matching
 DOMAIN,ma.zijieapi.com,REJECT,extended-matching,pre-matching
+
+# ===== fqnovel 日志/监控 =====
 DOMAIN,log3-applog.fqnovel.com,REJECT,extended-matching,pre-matching
 DOMAIN,log5-applog.fqnovel.com,REJECT,extended-matching,pre-matching
 DOMAIN,rtlog3-applog.fqnovel.com,REJECT,extended-matching,pre-matching
 DOMAIN,rtlog5-applog.fqnovel.com,REJECT,extended-matching,pre-matching
-
-# ===== 运营监控 / misc =====
 DOMAIN,mon11-misc-lq.fqnovel.com,REJECT,extended-matching,pre-matching
 DOMAIN,mon11-misc.fqnovel.com,REJECT,extended-matching,pre-matching
 DOMAIN,mon3-misc.fqnovel.com,REJECT,extended-matching,pre-matching
+
+# ===== toutiaocloud 监控 =====
 DOMAIN,mon.toutiaocloud.com,REJECT,extended-matching,pre-matching
 DOMAIN,mon.toutiaocloud.net,REJECT,extended-matching,pre-matching
 
@@ -98,35 +91,35 @@ DOMAIN,p11-webcast-sign.douyinpic.com,REJECT,extended-matching,pre-matching
 DOMAIN,p3-webcast-sign.douyinpic.com,REJECT,extended-matching,pre-matching
 DOMAIN,lf-normal-gr-sourcecdn.bytegecko.com,REJECT,extended-matching,pre-matching
 DOMAIN,lf-webcast-gr-sourcecdn.bytegecko.com,REJECT,extended-matching,pre-matching
+DOMAIN,mon11-misc.fqnovel.com,REJECT,extended-matching,pre-matching
+DOMAIN,mon3-misc.fqnovel.com,REJECT,extended-matching,pre-matching
+DOMAIN,mon11-misc-lq.fqnovel.com,REJECT,extended-matching,pre-matching
 
-# ===== 安全 / VAS / 认证 =====
+# ===== 安全 / VAS =====
 DOMAIN,security.snssdk.com,REJECT,extended-matching,pre-matching
 DOMAIN,vas.snssdk.com,REJECT,extended-matching,pre-matching
-DOMAIN,timon.zijieapi.com,REJECT,extended-matching,pre-matching
-DOMAIN,vcs.zijieapi.com,REJECT,extended-matching,pre-matching
 
-# ===== 效果广告 =====
+# ===== 效果广告 / 服务端广告竞价 =====
 DOMAIN,effect.snssdk.com,REJECT,extended-matching,pre-matching
 DOMAIN,i.snssdk.com,REJECT,extended-matching,pre-matching
-DOMAIN,is-lq.snssdk.com,REJECT,extended-matching,pre-matching
 DOMAIN,is.snssdk.com,REJECT,extended-matching,pre-matching
+DOMAIN,is-lq.snssdk.com,REJECT,extended-matching,pre-matching
 
 # ===== UGS SDK =====
 DOMAIN,zlink.ugsdk.cn,REJECT,extended-matching,pre-matching
 
-# ===== 关键词兜底 =====
-DOMAIN-KEYWORD,applog.fqnovel.com,REJECT,extended-matching
-DOMAIN-KEYWORD,applog-hl.fqnovel.com,REJECT,extended-matching
-DOMAIN-KEYWORD,misc.fqnovel.com,REJECT,extended-matching
-DOMAIN-KEYWORD,misc-hl.fqnovel.com,REJECT,extended-matching
-DOMAIN-KEYWORD,misc-lq.fqnovel.com,REJECT,extended-matching
-DOMAIN-KEYWORD,novelapp,REJECT,extended-matching
+# ===== snssdk 子域名（只拦截广告相关，保留小说正常请求） =====
+DOMAIN,timon.zijieapi.com,REJECT,extended-matching,pre-matching
+DOMAIN,vcs.zijieapi.com,REJECT,extended-matching,pre-matching
+
+# ===== fqnovel（只拦截日志/监控子域名） =====
+DOMAIN-SUFFIX,fqnovelvod.com,REJECT,extended-matching,pre-matching
 
 # ===== User-Agent =====
 USER-AGENT,ttplayer*,REJECT
 
 [URL Rewrite]
-# 广告 SDK 接口 → 拒绝
+# 广告 SDK 接口 → 拒绝（仅针对以 s 开头的广告路径）
 ^https?:\/\/.+\.snssdk\.com\/api\/ad\/union\/sdk\/get_ads\/ _ reject
 ^https?:\/\/.+\.snssdk\.com\/api\/ad\/union\/sdk\/stats\/ _ reject
 ^https?:\/\/.+\.snssdk\.com\/api\/ad\/union\/sdk\/settings\/ _ reject
