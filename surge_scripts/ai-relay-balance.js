@@ -1,33 +1,25 @@
-// AI 中转站余额面板 for Surge
-// 模块传参：BaseURL / APIKey / SiteToken / UserID / SiteCookie / Path / SitePath / QuotaPerUSD / Currency
-// APIKey 查询 API Key 已用量；SiteToken+UserID 或 SiteCookie 查询网站账户剩余余额。
+// AI 中转站 API Key 已用量面板 for Surge
+// 默认兼容 pipio: GET /api/usage/token/
 
 const DEFAULTS = {
   baseURL: "",
   apiKey: "",
-  siteToken: "",
-  userId: "",
-  siteCookie: "",
   path: "/api/usage/token/",
-  sitePath: "/api/user/self",
   quotaPerUSD: 500000,
   currency: "$",
 };
 
 function parseArgument() {
-  let raw = typeof $argument === "undefined" ? "" : String($argument || "");
+  const raw = typeof $argument === "undefined" ? "" : String($argument || "");
   if (!raw) return { ...DEFAULTS };
   try {
-    const obj = JSON.parse(raw);
-    return { ...DEFAULTS, ...obj };
+    return { ...DEFAULTS, ...JSON.parse(raw) };
   } catch (_) {
     const obj = {};
     raw.split("&").forEach((part) => {
       const i = part.indexOf("=");
       if (i < 0) return;
-      const k = decodeURIComponent(part.slice(0, i));
-      const v = decodeURIComponent(part.slice(i + 1));
-      obj[k] = v;
+      obj[decodeURIComponent(part.slice(0, i))] = decodeURIComponent(part.slice(i + 1));
     });
     return { ...DEFAULTS, ...obj };
   }
@@ -36,16 +28,13 @@ function parseArgument() {
 const cfg = parseArgument();
 cfg.baseURL = String(cfg.baseURL || "").replace(/\/$/, "");
 cfg.path = String(cfg.path || DEFAULTS.path);
-cfg.sitePath = String(cfg.sitePath || DEFAULTS.sitePath);
 cfg.quotaPerUSD = Number(cfg.quotaPerUSD || DEFAULTS.quotaPerUSD);
 cfg.currency = String(cfg.currency || DEFAULTS.currency);
 if (cfg.apiKey === "sk-xxxx") cfg.apiKey = "";
-if (cfg.siteToken === "site-token") cfg.siteToken = "";
-if (cfg.siteCookie === "cookie") cfg.siteCookie = "";
 
-function finish(title, content, color = "#1E90FF") {
+function done(content, color = "#34C759") {
   $done({
-    title,
+    title: "AI 中转站余额",
     content,
     icon: "creditcard",
     "icon-color": color,
@@ -59,153 +48,70 @@ function get(obj, paths) {
   }
 }
 
-function num(v) {
+function number(v) {
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
 }
 
-function fmtMoney(v) {
-  const n = num(v);
-  if (n === undefined) return "-";
-  return `${cfg.currency}${n.toFixed(4)}`;
-}
-
 function fmtQuota(v) {
-  const n = num(v);
+  const n = number(v);
   if (n === undefined) return "-";
   if (!cfg.quotaPerUSD || cfg.quotaPerUSD <= 0) return String(n);
-  return `${cfg.currency}${(n / cfg.quotaPerUSD).toFixed(4)} (${n})`;
+  return `${cfg.currency}${(n / cfg.quotaPerUSD).toFixed(4)}`;
 }
 
-function normalize(json) {
+function fmtMoney(v) {
+  const n = number(v);
+  return n === undefined ? "-" : `${cfg.currency}${n.toFixed(4)}`;
+}
+
+function render(json) {
   const data = json && (json.data || json.result || json);
+  const name = get(data, ["name", "username", "display_name", "email"]);
 
-  // Pipio / One API token usage style: /api/usage/token/
-  const usageAvailable = get(data, ["total_available"]);
-  const usageUsed = get(data, ["total_used"]);
-  const usageTotal = get(data, ["total_quota", "quota"]);
-  if (usageAvailable !== undefined || usageUsed !== undefined || usageTotal !== undefined) {
-    return {
-      mode: "quota",
-      user: get(data, ["name", "username", "email"]),
-      quota: usageAvailable,
-      used: usageUsed,
-      total: usageTotal,
-      unlimited: get(data, ["unlimited_quota"]),
-    };
+  // pipio / One API token usage: response.data.total_used is quota units
+  const quotaUsed = get(data, ["total_used", "used_quota", "used", "total_used_quota"]);
+  if (quotaUsed !== undefined) {
+    const lines = [];
+    if (name) lines.push(`名称：${name}`);
+    lines.push(`已用：${fmtQuota(quotaUsed)}`);
+    lines.push(`更新：${new Date().toLocaleString()}`);
+    return lines.join("\n");
   }
 
-  // OpenAI-compatible billing: /dashboard/billing/credit_grants
-  const totalAvailable = get(data, ["credit_grants.total_available"]);
-  const totalUsed = get(data, ["credit_grants.total_used"]);
-  const totalGranted = get(data, ["credit_grants.total_granted"]);
-  if (totalAvailable !== undefined || totalUsed !== undefined || totalGranted !== undefined) {
-    return {
-      mode: "money",
-      available: totalAvailable,
-      used: totalUsed,
-      granted: totalGranted,
-      user: get(data, ["username", "name", "email"]),
-    };
+  // OpenAI-compatible billing object, if a provider returns direct money values
+  const moneyUsed = get(data, ["credit_grants.total_used"]);
+  if (moneyUsed !== undefined) {
+    return [`已用：${fmtMoney(moneyUsed)}`, `更新：${new Date().toLocaleString()}`].join("\n");
   }
 
-  // One API / New API user style
-  return {
-    mode: "quota",
-    user: get(data, ["username", "display_name", "name", "email"]),
-    group: get(data, ["group"]),
-    quota: get(data, ["quota", "remain_quota", "remaining_quota", "balance", "credit"]),
-    used: get(data, ["used_quota", "used", "total_used_quota"]),
-    requestCount: get(data, ["request_count", "requestCount"]),
-  };
+  return [`已用：接口未返回用量字段`, `更新：${new Date().toLocaleString()}`].join("\n");
 }
 
-function render(info) {
-  const lines = [];
-  if (info.user) lines.push(`账号：${info.user}`);
-  if (info.group) lines.push(`分组：${info.group}`);
-
-  if (info.mode === "money") {
-    lines.push(`已用：${info.used !== undefined ? fmtMoney(info.used) : "-"}`);
-  } else {
-    lines.push(`已用：${info.used !== undefined ? fmtQuota(info.used) : "-"}`);
-    if (info.requestCount !== undefined) lines.push(`请求：${info.requestCount}`);
-  }
-
-  lines.push(`更新：${new Date().toLocaleString()}`);
-  return lines.join("\n");
-}
-
-function requestJSON(url, token, callback, extraHeaders = {}) {
-  const headers = {
-    "Content-Type": "application/json",
-    ...extraHeaders,
-  };
-  if (token) headers.Authorization = `Bearer ${token}`;
+if (!cfg.baseURL || !cfg.apiKey) {
+  done("请填写 base_url 和 api_key。", "#FF9500");
+} else {
+  const url = cfg.baseURL + (cfg.path.startsWith("/") ? cfg.path : `/${cfg.path}`);
   $httpClient.get({
     url,
-    headers,
+    headers: {
+      Authorization: `Bearer ${cfg.apiKey}`,
+      "Content-Type": "application/json",
+    },
     timeout: 10000,
   }, (error, response, body) => {
-    if (error) return callback(`请求失败：${error}`);
+    if (error) return done(`请求失败：${error}`, "#FF3B30");
     const status = response ? response.status : 0;
     let json;
     try {
       json = JSON.parse(body || "{}");
     } catch (e) {
-      if (status < 200 || status >= 300) return callback(`HTTP ${status}`);
-      return callback("返回不是 JSON");
+      return done(status >= 200 && status < 300 ? "返回不是 JSON" : `HTTP ${status}`, "#FF3B30");
     }
-    if (status < 200 || status >= 300) {
+    if (status < 200 || status >= 300 || json.success === false) {
       const message = String(json.message || json.error || `HTTP ${status}`);
-      return callback(message.slice(0, 160));
+      return done(message.slice(0, 160), "#FF3B30");
     }
-    if (json && json.success === false) {
-      return callback(String(json.message || json.error || "接口返回失败").slice(0, 160));
-    }
-    callback(null, json);
+    done(render(json));
   });
-}
-
-function renderSiteBalance(json) {
-  const data = json && (json.data || json.result || json);
-  const quota = get(data, ["quota", "remain_quota", "remaining_quota", "balance", "credit"]);
-  const user = get(data, ["username", "display_name", "name", "email"]);
-  const lines = [];
-  if (user) lines.push(`账号：${user}`);
-  lines.push(`剩余：${quota !== undefined ? fmtQuota(quota) : "接口未返回余额"}`);
-  return lines;
-}
-
-const hasTokenAuth = cfg.siteToken && cfg.userId && cfg.userId !== "0";
-const hasCookieAuth = !!cfg.siteCookie;
-
-if (!cfg.baseURL || !cfg.apiKey || (!hasTokenAuth && !hasCookieAuth)) {
-  finish("AI 中转站余额", "请填写 api_key，并二选一填写 site_cookie 或 site_token+user_id 来查询网站剩余余额。", "#FF9500");
-} else {
-  const apiURL = cfg.baseURL + (cfg.path.startsWith("/") ? cfg.path : `/${cfg.path}`);
-  const siteURL = cfg.baseURL + (cfg.sitePath.startsWith("/") ? cfg.sitePath : `/${cfg.sitePath}`);
-  let usageText = "已用：查询中";
-  let siteLines = ["剩余：查询中"];
-  let usageDone = false;
-  let siteDone = false;
-
-  function finishWhenReady() {
-    if (!usageDone || !siteDone) return;
-    finish("AI 中转站余额", [usageText, ...siteLines, `更新：${new Date().toLocaleString()}`].join("\n"), "#34C759");
-  }
-
-  requestJSON(apiURL, cfg.apiKey, (error, json) => {
-    usageText = error ? `已用：${error}` : render(normalize(json)).split("\n").find((line) => line.startsWith("已用：")) || "已用：接口未返回";
-    usageDone = true;
-    finishWhenReady();
-  });
-
-  const siteHeaders = hasCookieAuth ? { Cookie: cfg.siteCookie } : { "Pipio-User": cfg.userId };
-  const siteAuthToken = hasCookieAuth ? "" : cfg.siteToken;
-  requestJSON(siteURL, siteAuthToken, (error, json) => {
-    siteLines = error ? [`剩余：${error}`] : renderSiteBalance(json);
-    siteDone = true;
-    finishWhenReady();
-  }, siteHeaders);
 }
