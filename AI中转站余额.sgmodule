@@ -3,11 +3,11 @@
 #!author=Minis
 #!category=zhiaon
 #!system=ios
-#!arguments=BaseURL: , APIKey: , Path:/api/user/self, QuotaPerUSD:500000, Currency:$,
-#!arguments-desc=只需要修改 BaseURL 和 APIKey：\nBaseURL 改成你的 AI 中转站根地址，例如 https://api.example.com，不要以 / 结尾。\nAPIKey 改成你的中转站 API Key 或 Token。\nPath 默认 /api/user/self，一般不用改。\nQuotaPerUSD 默认 500000，一般不用改。\nCurrency 默认 $，可改成 ¥。
+#!arguments=base_url:,api_key:,path:/api/user/self,quota_per_usd:500000,currency:$,
+#!arguments-desc=只需要修改 base_url 和 api_key：\nbase_url 改成你的 AI 中转站根地址，例如 https://api.example.com，不要以 / 结尾。\napi_key 改成你的中转站 API Key 或 Token。\npath 默认 /api/user/self，一般不用改。\nquota_per_usd 默认 500000，一般不用改。\ncurrency 默认 $，可改成 ¥。
 
 [Panel]
 AI 中转站余额 = title=AI 中转站余额, content=加载中..., style=info, script-name=ai-relay-balance, update-interval=600
 
 [Script]
-ai-relay-balance = type=generic, script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/ai-relay-balance.js, timeout=15, argument=baseURL={{{BaseURL}}}&apiKey={{{APIKey}}}&path={{{Path}}}&quotaPerUSD={{{QuotaPerUSD}}}&currency={{{Currency}}}
+ai-relay-balance = type=generic, script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/ai-relay-balance.js, timeout=15, argument=baseURL={{{base_url}}}&apiKey={{{api_key}}}&path={{{path}}}&quotaPerUSD={{{quota_per_usd}}}&currency={{{currency}}}
