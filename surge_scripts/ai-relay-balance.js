@@ -1,12 +1,13 @@
 // AI 中转站余额面板 for Surge
-// 模块传参：BaseURL / APIKey / SiteToken / Path / SitePath / QuotaPerUSD / Currency
-// APIKey 查询 API Key 已用量；SiteToken 查询网站账户剩余余额。
+// 模块传参：BaseURL / APIKey / SiteToken / UserID / SiteCookie / Path / SitePath / QuotaPerUSD / Currency
+// APIKey 查询 API Key 已用量；SiteToken+UserID 或 SiteCookie 查询网站账户剩余余额。
 
 const DEFAULTS = {
   baseURL: "",
   apiKey: "",
   siteToken: "",
   userId: "",
+  siteCookie: "",
   path: "/api/usage/token/",
   sitePath: "/api/user/self",
   quotaPerUSD: 500000,
@@ -38,6 +39,9 @@ cfg.path = String(cfg.path || DEFAULTS.path);
 cfg.sitePath = String(cfg.sitePath || DEFAULTS.sitePath);
 cfg.quotaPerUSD = Number(cfg.quotaPerUSD || DEFAULTS.quotaPerUSD);
 cfg.currency = String(cfg.currency || DEFAULTS.currency);
+if (cfg.apiKey === "sk-xxxx") cfg.apiKey = "";
+if (cfg.siteToken === "site-token") cfg.siteToken = "";
+if (cfg.siteCookie === "cookie") cfg.siteCookie = "";
 
 function finish(title, content, color = "#1E90FF") {
   $done({
@@ -133,13 +137,14 @@ function render(info) {
 }
 
 function requestJSON(url, token, callback, extraHeaders = {}) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...extraHeaders,
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
   $httpClient.get({
     url,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      ...extraHeaders,
-    },
+    headers,
     timeout: 10000,
   }, (error, response, body) => {
     if (error) return callback(`请求失败：${error}`);
@@ -172,8 +177,11 @@ function renderSiteBalance(json) {
   return lines;
 }
 
-if (!cfg.baseURL || !cfg.apiKey || !cfg.siteToken || !cfg.userId) {
-  finish("AI 中转站余额", "请填写 api_key、site_token 和 user_id；api_key 查已用，site_token + user_id 查网站剩余余额。", "#FF9500");
+const hasTokenAuth = cfg.siteToken && cfg.userId && cfg.userId !== "0";
+const hasCookieAuth = !!cfg.siteCookie;
+
+if (!cfg.baseURL || !cfg.apiKey || (!hasTokenAuth && !hasCookieAuth)) {
+  finish("AI 中转站余额", "请填写 api_key，并二选一填写 site_cookie 或 site_token+user_id 来查询网站剩余余额。", "#FF9500");
 } else {
   const apiURL = cfg.baseURL + (cfg.path.startsWith("/") ? cfg.path : `/${cfg.path}`);
   const siteURL = cfg.baseURL + (cfg.sitePath.startsWith("/") ? cfg.sitePath : `/${cfg.sitePath}`);
@@ -193,9 +201,11 @@ if (!cfg.baseURL || !cfg.apiKey || !cfg.siteToken || !cfg.userId) {
     finishWhenReady();
   });
 
-  requestJSON(siteURL, cfg.siteToken, (error, json) => {
+  const siteHeaders = hasCookieAuth ? { Cookie: cfg.siteCookie } : { "Pipio-User": cfg.userId };
+  const siteAuthToken = hasCookieAuth ? "" : cfg.siteToken;
+  requestJSON(siteURL, siteAuthToken, (error, json) => {
     siteLines = error ? [`剩余：${error}`] : renderSiteBalance(json);
     siteDone = true;
     finishWhenReady();
-  }, { "Pipio-User": cfg.userId });
+  }, siteHeaders);
 }
