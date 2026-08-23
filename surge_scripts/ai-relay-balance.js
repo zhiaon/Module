@@ -130,6 +130,7 @@ if (!cfg.baseURL || !cfg.apiKey) {
   }, (error, response, body) => {
     if (error) return finish("AI 中转站余额", `请求失败：${error}`, "#FF3B30");
     const status = response ? response.status : 0;
+    if (status === 401) return finish("AI 中转站余额", "HTTP 401：Token 无效。pipio 请填写账户 Access Token，不是 sk- API Key。", "#FF3B30");
     if (status < 200 || status >= 300) return finish("AI 中转站余额", `HTTP ${status}，请检查 BaseURL / Path / Token`, "#FF3B30");
 
     let json;
