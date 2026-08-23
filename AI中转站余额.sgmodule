@@ -3,11 +3,11 @@
 #!author=Minis
 #!category=zhiaon
 #!system=ios
-#!arguments=BaseURL:,APIKey:,Path:/api/user/self,QuotaPerUSD:500000,Currency:$,
+#!arguments=BaseURL=&APIKey=&Path=/api/user/self&QuotaPerUSD=500000&Currency=$
 #!arguments-desc=BaseURL: AI 中转站根地址，例如 https://api.example.com，不要以 / 结尾\nAPIKey: 中转站 API Key 或 Token，仅保存在 Surge 模块参数中\nPath: 余额接口路径，One API / New API 通常为 /api/user/self\nQuotaPerUSD: 额度换算比例，One API / New API 常见为 500000\nCurrency: 货币符号，例如 $ 或 ¥
 
 [Panel]
 AI 中转站余额 = title=AI 中转站余额, content=加载中..., style=info, script-name=ai-relay-balance, update-interval=600
 
 [Script]
-ai-relay-balance = type=generic, script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/ai-relay-balance.js, timeout=15, argument=baseURL={{{BaseURL}}}&apiKey={{{APIKey}}}&path={{{Path}}}&quotaPerUSD={{{QuotaPerUSD}}}&currency={{{Currency}}}
+ai-relay-balance = type=generic, script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/ai-relay-balance.js, timeout=15, argument={"baseURL":"%BaseURL%","apiKey":"%APIKey%","path":"%Path%","quotaPerUSD":"%QuotaPerUSD%","currency":"%Currency%"}
