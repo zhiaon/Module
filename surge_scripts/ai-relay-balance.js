@@ -144,12 +144,16 @@ function requestJSON(url, token, callback, extraHeaders = {}) {
   }, (error, response, body) => {
     if (error) return callback(`请求失败：${error}`);
     const status = response ? response.status : 0;
-    if (status < 200 || status >= 300) return callback(`HTTP ${status}`);
     let json;
     try {
       json = JSON.parse(body || "{}");
     } catch (e) {
+      if (status < 200 || status >= 300) return callback(`HTTP ${status}`);
       return callback("返回不是 JSON");
+    }
+    if (status < 200 || status >= 300) {
+      const message = String(json.message || json.error || `HTTP ${status}`);
+      return callback(message.slice(0, 160));
     }
     if (json && json.success === false) {
       return callback(String(json.message || json.error || "接口返回失败").slice(0, 160));
