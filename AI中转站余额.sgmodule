@@ -1,13 +1,13 @@
 #!name=AI 中转站余额
-#!desc=在 Surge 面板显示 AI 中转站余额。JS 使用 GitHub 远程脚本，默认兼容 One API / New API 的 /api/user/self。
+#!desc=在 Surge 面板显示 AI 中转站余额。填写 BaseURL 和 APIKey 即可，默认兼容 One API / New API。
 #!author=Minis
 #!category=zhiaon
 #!system=ios
-#!arguments=BaseURL=&APIKey=&Path=/api/user/self&QuotaPerUSD=500000&Currency=$
-#!arguments-desc=BaseURL: AI 中转站根地址，例如 https://api.example.com，不要以 / 结尾\nAPIKey: 中转站 API Key 或 Token，仅保存在 Surge 模块参数中\nPath: 余额接口路径，One API / New API 通常为 /api/user/self\nQuotaPerUSD: 额度换算比例，One API / New API 常见为 500000\nCurrency: 货币符号，例如 $ 或 ¥
+#!arguments=BaseURL:https://api.example.com,APIKey:sk-xxxx,Path:/api/user/self,QuotaPerUSD:500000,Currency:$,
+#!arguments-desc=只需要修改 BaseURL 和 APIKey：\nBaseURL 改成你的 AI 中转站根地址，例如 https://api.example.com，不要以 / 结尾。\nAPIKey 改成你的中转站 API Key 或 Token。\nPath 默认 /api/user/self，一般不用改。\nQuotaPerUSD 默认 500000，一般不用改。\nCurrency 默认 $，可改成 ¥。
 
 [Panel]
 AI 中转站余额 = title=AI 中转站余额, content=加载中..., style=info, script-name=ai-relay-balance, update-interval=600
 
 [Script]
-ai-relay-balance = type=generic, script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/ai-relay-balance.js, timeout=15, argument={"baseURL":"%BaseURL%","apiKey":"%APIKey%","path":"%Path%","quotaPerUSD":"%QuotaPerUSD%","currency":"%Currency%"}
+ai-relay-balance = type=generic, script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/ai-relay-balance.js, timeout=15, argument=baseURL={{{BaseURL}}}&apiKey={{{APIKey}}}&path={{{Path}}}&quotaPerUSD={{{QuotaPerUSD}}}&currency={{{Currency}}}
