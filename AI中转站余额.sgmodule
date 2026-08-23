@@ -1,5 +1,5 @@
 #!name=AI 中转站余额
-#!desc=在 Surge 面板显示 AI 中转站余额。JS 使用本地文件 Scripts/ai-relay-balance.js，默认兼容 One API / New API 的 /api/user/self。
+#!desc=在 Surge 面板显示 AI 中转站余额。JS 使用 GitHub 远程脚本，默认兼容 One API / New API 的 /api/user/self。
 #!author=Minis
 #!category=zhiaon
 #!system=ios
@@ -10,4 +10,4 @@
 AI 中转站余额 = title=AI 中转站余额, content=加载中..., style=info, script-name=ai-relay-balance, update-interval=600
 
 [Script]
-ai-relay-balance = type=generic, script-path=Scripts/ai-relay-balance.js, timeout=15, argument=baseURL={{{BaseURL}}}&apiKey={{{APIKey}}}&path={{{Path}}}&quotaPerUSD={{{QuotaPerUSD}}}&currency={{{Currency}}}
+ai-relay-balance = type=generic, script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/ai-relay-balance.js, timeout=15, argument=baseURL={{{BaseURL}}}&apiKey={{{APIKey}}}&path={{{Path}}}&quotaPerUSD={{{QuotaPerUSD}}}&currency={{{Currency}}}
