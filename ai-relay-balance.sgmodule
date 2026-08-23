@@ -3,7 +3,7 @@
 #!author=Minis
 #!category=zhiaon
 #!system=ios
-#!arguments=BaseURL:https://api.example.com,APIKey:sk-xxxx,Path:/api/user/self,QuotaPerUSD:500000,Currency:$,
+#!arguments=BaseURL: , APIKey: , Path:/api/user/self, QuotaPerUSD:500000, Currency:$,
 #!arguments-desc=只需要修改 BaseURL 和 APIKey：\nBaseURL 改成你的 AI 中转站根地址，例如 https://api.example.com，不要以 / 结尾。\nAPIKey 改成你的中转站 API Key 或 Token。\nPath 默认 /api/user/self，一般不用改。\nQuotaPerUSD 默认 500000，一般不用改。\nCurrency 默认 $，可改成 ¥。
 
 [Panel]
