@@ -1,13 +1,13 @@
 #!name=AI 中转站余额
-#!desc=在 Surge 面板显示 AI 中转站 API Key 余额。pipio 默认使用 /api/usage/token/，填写 sk- API Key。
+#!desc=在 Surge 面板显示 AI 中转站 API Key 已用量和网站账户剩余余额。
 #!author=Minis
 #!category=zhiaon
 #!system=ios
-#!arguments=base_url:https://pipio.io,api_key:sk-xxxx,path:/api/usage/token/,quota_per_usd:500000,currency:$,
-#!arguments-desc=base_url: AI 中转站根地址，例如 https://pipio.io，不要以 / 结尾。\napi_key: 中转站 API Key；pipio 请填写 sk- 开头的 API Key。\npath: 余额接口路径；pipio 默认为 /api/usage/token/。\nquota_per_usd: 额度换算比例；pipio / One API / New API 常见为 500000。\ncurrency: 余额显示货币符号，例如 $ 或 ¥。
+#!arguments=base_url:https://pipio.io,api_key:sk-xxxx,site_token:site-token,path:/api/usage/token/,site_path:/api/user/self,quota_per_usd:500000,currency:$,
+#!arguments-desc=base_url: AI 中转站根地址，例如 https://pipio.io，不要以 / 结尾。\napi_key: API Key，用于查询已用量；pipio 填 sk- 开头的 API Key。\nsite_token: 网站 API 接口令牌，用于查询账户剩余余额；不是 sk- API Key。\npath: API Key 用量接口；pipio 默认为 /api/usage/token/。\nsite_path: 网站账户余额接口；pipio 默认为 /api/user/self。\nquota_per_usd: 额度换算比例；pipio / One API / New API 常见为 500000。\ncurrency: 余额显示货币符号，例如 $ 或 ¥。
 
 [Panel]
 AI 中转站余额 = title=AI 中转站余额, content=加载中..., style=info, script-name=ai-relay-balance, update-interval=600
 
 [Script]
-ai-relay-balance = type=generic, script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/ai-relay-balance.js, timeout=15, argument=baseURL={{{base_url}}}&apiKey={{{api_key}}}&path={{{path}}}&quotaPerUSD={{{quota_per_usd}}}&currency={{{currency}}}
+ai-relay-balance = type=generic, script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/ai-relay-balance.js, timeout=15, argument=baseURL={{{base_url}}}&apiKey={{{api_key}}}&siteToken={{{site_token}}}&path={{{path}}}&sitePath={{{site_path}}}&quotaPerUSD={{{quota_per_usd}}}&currency={{{currency}}}

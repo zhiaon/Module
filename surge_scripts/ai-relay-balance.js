@@ -1,11 +1,13 @@
 // AI 中转站余额面板 for Surge
-// 模块传参：BaseURL / APIKey / Path / QuotaPerUSD / Currency
-// 默认兼容 One API / New API: GET /api/user/self
+// 模块传参：BaseURL / APIKey / SiteToken / Path / SitePath / QuotaPerUSD / Currency
+// APIKey 查询 API Key 已用量；SiteToken 查询网站账户剩余余额。
 
 const DEFAULTS = {
   baseURL: "",
   apiKey: "",
-  path: "/api/user/self",
+  siteToken: "",
+  path: "/api/usage/token/",
+  sitePath: "/api/user/self",
   quotaPerUSD: 500000,
   currency: "$",
 };
@@ -32,6 +34,7 @@ function parseArgument() {
 const cfg = parseArgument();
 cfg.baseURL = String(cfg.baseURL || "").replace(/\/$/, "");
 cfg.path = String(cfg.path || DEFAULTS.path);
+cfg.sitePath = String(cfg.sitePath || DEFAULTS.sitePath);
 cfg.quotaPerUSD = Number(cfg.quotaPerUSD || DEFAULTS.quotaPerUSD);
 cfg.currency = String(cfg.currency || DEFAULTS.currency);
 
@@ -128,36 +131,65 @@ function render(info) {
   return lines.join("\n");
 }
 
-if (!cfg.baseURL || !cfg.apiKey) {
-  finish("AI 中转站余额", "请在模块参数填写 BaseURL 和 APIKey/Token", "#FF9500");
-} else {
-  const url = cfg.baseURL + (cfg.path.startsWith("/") ? cfg.path : `/${cfg.path}`);
+function requestJSON(url, token, callback) {
   $httpClient.get({
     url,
     headers: {
-      Authorization: `Bearer ${cfg.apiKey}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
     timeout: 10000,
   }, (error, response, body) => {
-    if (error) return finish("AI 中转站余额", `请求失败：${error}`, "#FF3B30");
+    if (error) return callback(`请求失败：${error}`);
     const status = response ? response.status : 0;
-    if (status === 401) return finish("AI 中转站余额", "HTTP 401：API Key 无效或无权查询余额，请检查 base_url / api_key / path。", "#FF3B30");
-    if (status < 200 || status >= 300) return finish("AI 中转站余额", `HTTP ${status}，请检查 BaseURL / Path / Token`, "#FF3B30");
-
+    if (status < 200 || status >= 300) return callback(`HTTP ${status}`);
     let json;
     try {
       json = JSON.parse(body || "{}");
     } catch (e) {
-      return finish("AI 中转站余额", "返回不是 JSON，请检查接口地址", "#FF3B30");
+      return callback("返回不是 JSON");
     }
-
     if (json && json.success === false) {
-      const message = String(json.message || json.error || "接口返回失败");
-      return finish("AI 中转站余额", message.slice(0, 180), "#FF3B30");
+      return callback(String(json.message || json.error || "接口返回失败").slice(0, 160));
     }
+    callback(null, json);
+  });
+}
 
-    const content = render(normalize(json));
-    finish("AI 中转站余额", content, "#34C759");
+function renderSiteBalance(json) {
+  const data = json && (json.data || json.result || json);
+  const quota = get(data, ["quota", "remain_quota", "remaining_quota", "balance", "credit"]);
+  const user = get(data, ["username", "display_name", "name", "email"]);
+  const lines = [];
+  if (user) lines.push(`账号：${user}`);
+  lines.push(`剩余：${quota !== undefined ? fmtQuota(quota) : "接口未返回余额"}`);
+  return lines;
+}
+
+if (!cfg.baseURL || !cfg.apiKey || !cfg.siteToken) {
+  finish("AI 中转站余额", "请填写 api_key 和 site_token；api_key 查已用，site_token 查网站剩余余额。", "#FF9500");
+} else {
+  const apiURL = cfg.baseURL + (cfg.path.startsWith("/") ? cfg.path : `/${cfg.path}`);
+  const siteURL = cfg.baseURL + (cfg.sitePath.startsWith("/") ? cfg.sitePath : `/${cfg.sitePath}`);
+  let usageText = "已用：查询中";
+  let siteLines = ["剩余：查询中"];
+  let usageDone = false;
+  let siteDone = false;
+
+  function finishWhenReady() {
+    if (!usageDone || !siteDone) return;
+    finish("AI 中转站余额", [usageText, ...siteLines, `更新：${new Date().toLocaleString()}`].join("\n"), "#34C759");
+  }
+
+  requestJSON(apiURL, cfg.apiKey, (error, json) => {
+    usageText = error ? `已用：${error}` : render(normalize(json)).split("\n").find((line) => line.startsWith("已用：")) || "已用：接口未返回";
+    usageDone = true;
+    finishWhenReady();
+  });
+
+  requestJSON(siteURL, cfg.siteToken, (error, json) => {
+    siteLines = error ? [`剩余：${error}`] : renderSiteBalance(json);
+    siteDone = true;
+    finishWhenReady();
   });
 }
