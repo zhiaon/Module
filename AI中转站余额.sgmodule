@@ -4,7 +4,7 @@
 #!category=zhiaon
 #!system=ios
 #!arguments=base_url:https://pipio.io,api_key:access_token,path:/api/user/self,quota_per_usd:500000,currency:$,
-#!arguments-desc=只需要修改 base_url 和 api_key：\nbase_url 改成你的 AI 中转站根地址，例如 https://api.example.com，不要以 / 结尾。\napi_key 改成你的中转站 API Key 或 Token。\npath 默认 /api/user/self，一般不用改。\nquota_per_usd 默认 500000，一般不用改。\ncurrency 默认 $，可改成 ¥。
+#!arguments-desc=base_url: AI 中转站根地址，例如 https://pipio.io，不要以 / 结尾。\napi_key: 账户 Access Token 或可访问余额接口的 Token；pipio 的 sk- API Key 通常不适用于 /api/user/self。\npath: 余额接口路径；One API / New API 通常为 /api/user/self。\nquota_per_usd: 额度换算比例；One API / New API 常见为 500000。\ncurrency: 余额显示货币符号，例如 $ 或 ¥。
 
 [Panel]
 AI 中转站余额 = title=AI 中转站余额, content=加载中..., style=info, script-name=ai-relay-balance, update-interval=600
