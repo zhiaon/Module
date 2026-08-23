@@ -3,7 +3,7 @@
 #!author=Minis
 #!category=zhiaon
 #!system=ios
-#!arguments=base_url:,api_key:,path:/api/user/self,quota_per_usd:500000,currency:$,
+#!arguments=base_url:https://pipio.io,api_key:access_token,path:/api/user/self,quota_per_usd:500000,currency:$,
 #!arguments-desc=只需要修改 base_url 和 api_key：\nbase_url 改成你的 AI 中转站根地址，例如 https://api.example.com，不要以 / 结尾。\napi_key 改成你的中转站 API Key 或 Token。\npath 默认 /api/user/self，一般不用改。\nquota_per_usd 默认 500000，一般不用改。\ncurrency 默认 $，可改成 ¥。
 
 [Panel]
