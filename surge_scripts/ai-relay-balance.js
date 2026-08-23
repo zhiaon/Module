@@ -72,10 +72,25 @@ function fmtQuota(v) {
 function normalize(json) {
   const data = json && (json.data || json.result || json);
 
+  // Pipio / One API token usage style: /api/usage/token/
+  const usageAvailable = get(data, ["total_available"]);
+  const usageUsed = get(data, ["total_used"]);
+  const usageTotal = get(data, ["total_quota", "quota"]);
+  if (usageAvailable !== undefined || usageUsed !== undefined || usageTotal !== undefined) {
+    return {
+      mode: "quota",
+      user: get(data, ["name", "username", "email"]),
+      quota: usageAvailable,
+      used: usageUsed,
+      total: usageTotal,
+      unlimited: get(data, ["unlimited_quota"]),
+    };
+  }
+
   // OpenAI-compatible billing: /dashboard/billing/credit_grants
-  const totalAvailable = get(data, ["total_available", "credit_grants.total_available"]);
-  const totalUsed = get(data, ["total_used", "credit_grants.total_used"]);
-  const totalGranted = get(data, ["total_granted", "credit_grants.total_granted"]);
+  const totalAvailable = get(data, ["credit_grants.total_available"]);
+  const totalUsed = get(data, ["credit_grants.total_used"]);
+  const totalGranted = get(data, ["credit_grants.total_granted"]);
   if (totalAvailable !== undefined || totalUsed !== undefined || totalGranted !== undefined) {
     return {
       mode: "money",
@@ -86,7 +101,7 @@ function normalize(json) {
     };
   }
 
-  // One API / New API style
+  // One API / New API user style
   return {
     mode: "quota",
     user: get(data, ["username", "display_name", "name", "email"]),
@@ -107,8 +122,10 @@ function render(info) {
     if (info.used !== undefined) lines.push(`已用：${fmtMoney(info.used)}`);
     if (info.granted !== undefined) lines.push(`总额：${fmtMoney(info.granted)}`);
   } else {
-    if (info.quota !== undefined) lines.push(`余额：${fmtQuota(info.quota)}`);
+    if (info.unlimited) lines.push("余额：无限额度");
+    else if (info.quota !== undefined) lines.push(`余额：${fmtQuota(info.quota)}`);
     if (info.used !== undefined) lines.push(`已用：${fmtQuota(info.used)}`);
+    if (info.total !== undefined) lines.push(`总额：${fmtQuota(info.total)}`);
     if (info.requestCount !== undefined) lines.push(`请求：${info.requestCount}`);
   }
 
@@ -130,7 +147,7 @@ if (!cfg.baseURL || !cfg.apiKey) {
   }, (error, response, body) => {
     if (error) return finish("AI 中转站余额", `请求失败：${error}`, "#FF3B30");
     const status = response ? response.status : 0;
-    if (status === 401) return finish("AI 中转站余额", "HTTP 401：Token 无效。pipio 请填写账户 Access Token，不是 sk- API Key。", "#FF3B30");
+    if (status === 401) return finish("AI 中转站余额", "HTTP 401：API Key 无效或无权查询余额，请检查 base_url / api_key / path。", "#FF3B30");
     if (status < 200 || status >= 300) return finish("AI 中转站余额", `HTTP ${status}，请检查 BaseURL / Path / Token`, "#FF3B30");
 
     let json;
