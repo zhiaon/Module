@@ -139,6 +139,11 @@ if (!cfg.baseURL || !cfg.apiKey) {
       return finish("AI 中转站余额", "返回不是 JSON，请检查接口地址", "#FF3B30");
     }
 
+    if (json && json.success === false) {
+      const message = String(json.message || json.error || "接口返回失败");
+      return finish("AI 中转站余额", message.slice(0, 180), "#FF3B30");
+    }
+
     const content = render(normalize(json));
     finish("AI 中转站余额", content, "#34C759");
   });
