@@ -118,14 +118,9 @@ function render(info) {
   if (info.group) lines.push(`分组：${info.group}`);
 
   if (info.mode === "money") {
-    if (info.available !== undefined) lines.push(`余额：${fmtMoney(info.available)}`);
-    if (info.used !== undefined) lines.push(`已用：${fmtMoney(info.used)}`);
-    if (info.granted !== undefined) lines.push(`总额：${fmtMoney(info.granted)}`);
+    lines.push(`已用：${info.used !== undefined ? fmtMoney(info.used) : "-"}`);
   } else {
-    if (info.unlimited) lines.push("余额：无限额度");
-    else if (info.quota !== undefined) lines.push(`余额：${fmtQuota(info.quota)}`);
-    if (info.used !== undefined) lines.push(`已用：${fmtQuota(info.used)}`);
-    if (info.total !== undefined) lines.push(`总额：${fmtQuota(info.total)}`);
+    lines.push(`已用：${info.used !== undefined ? fmtQuota(info.used) : "-"}`);
     if (info.requestCount !== undefined) lines.push(`请求：${info.requestCount}`);
   }
 
