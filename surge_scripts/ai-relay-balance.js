@@ -6,6 +6,7 @@ const DEFAULTS = {
   baseURL: "",
   apiKey: "",
   siteToken: "",
+  userId: "",
   path: "/api/usage/token/",
   sitePath: "/api/user/self",
   quotaPerUSD: 500000,
@@ -131,12 +132,13 @@ function render(info) {
   return lines.join("\n");
 }
 
-function requestJSON(url, token, callback) {
+function requestJSON(url, token, callback, extraHeaders = {}) {
   $httpClient.get({
     url,
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      ...extraHeaders,
     },
     timeout: 10000,
   }, (error, response, body) => {
@@ -166,8 +168,8 @@ function renderSiteBalance(json) {
   return lines;
 }
 
-if (!cfg.baseURL || !cfg.apiKey || !cfg.siteToken) {
-  finish("AI 中转站余额", "请填写 api_key 和 site_token；api_key 查已用，site_token 查网站剩余余额。", "#FF9500");
+if (!cfg.baseURL || !cfg.apiKey || !cfg.siteToken || !cfg.userId) {
+  finish("AI 中转站余额", "请填写 api_key、site_token 和 user_id；api_key 查已用，site_token + user_id 查网站剩余余额。", "#FF9500");
 } else {
   const apiURL = cfg.baseURL + (cfg.path.startsWith("/") ? cfg.path : `/${cfg.path}`);
   const siteURL = cfg.baseURL + (cfg.sitePath.startsWith("/") ? cfg.sitePath : `/${cfg.sitePath}`);
@@ -191,5 +193,5 @@ if (!cfg.baseURL || !cfg.apiKey || !cfg.siteToken) {
     siteLines = error ? [`剩余：${error}`] : renderSiteBalance(json);
     siteDone = true;
     finishWhenReady();
-  });
+  }, { "Pipio-User": cfg.userId });
 }
